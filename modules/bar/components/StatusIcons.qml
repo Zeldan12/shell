@@ -140,6 +140,21 @@ StyledRect {
             }
         }
 
+        WrappedLoader {
+            name: "packageManager"
+            active: Config.bar.status.showPackageManager
+
+            sourceComponent: MaterialIcon {
+                animate: true
+                text: {
+                  if (PackageManager.checking) return 'question_exchange'
+                  if (PackageManager.updates.length > 0) return 'upgrade'
+                  return 'check_circle' 
+                }
+                color: root.colour
+            }
+        }
+
         // Network icon
         WrappedLoader {
             name: "network"

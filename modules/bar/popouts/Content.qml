@@ -42,6 +42,11 @@ Item {
         }
 
         Popout {
+            name: "packageManager"
+            sourceComponent: PackageManager {}
+        }
+
+        Popout {
             name: "battery"
             source: "Battery.qml"
         }
