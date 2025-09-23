@@ -142,7 +142,7 @@ StyledRect {
 
         WrappedLoader {
             name: "packageManager"
-            active: Config.bar.status.showPackageManager
+            active: false
 
             sourceComponent: MaterialIcon {
                 animate: true

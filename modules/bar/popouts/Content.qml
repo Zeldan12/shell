@@ -43,10 +43,10 @@ Item {
             }
         }
 
-        Popout {
-            name: "packageManager"
-            sourceComponent: PackageManager {}
-        }
+        // Popout {
+        //     name: "packageManager"
+        //     sourceComponent: PackageManager {}
+        // }
 
         Popout {
             name: "battery"
