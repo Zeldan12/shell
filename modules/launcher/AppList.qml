@@ -9,12 +9,11 @@ import qs.services
 import qs.config
 import Quickshell
 import QtQuick
-import QtQuick.Controls
 
 StyledListView {
     id: root
 
-    required property TextField search
+    required property StyledTextField search
     required property PersistentProperties visibilities
 
     model: ScriptModel {
@@ -161,7 +160,9 @@ StyledListView {
         }
     }
 
-    ScrollBar.vertical: StyledScrollBar {}
+    StyledScrollBar.vertical: StyledScrollBar {
+        flickable: root
+    }
 
     add: Transition {
         enabled: !root.state

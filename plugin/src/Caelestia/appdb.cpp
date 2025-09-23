@@ -9,7 +9,17 @@ namespace caelestia {
 AppEntry::AppEntry(QObject* entry, unsigned int frequency, QObject* parent)
     : QObject(parent)
     , m_entry(entry)
-    , m_frequency(frequency) {}
+    , m_frequency(frequency) {
+    const auto mo = m_entry->metaObject();
+    const auto tmo = metaObject();
+
+    for (const auto& prop :
+        { "name", "comment", "execString", "startupClass", "genericName", "categories", "keywords" }) {
+        const auto metaProp = mo->property(mo->indexOfProperty(prop));
+        const auto thisMetaProp = tmo->property(tmo->indexOfProperty(prop));
+        connect(m_entry, metaProp.notifySignal(), this, thisMetaProp.notifySignal());
+    }
+}
 
 QObject* AppEntry::entry() const {
     return m_entry;
@@ -39,7 +49,7 @@ QString AppEntry::name() const {
     return m_entry->property("name").toString();
 }
 
-QString AppEntry::desc() const {
+QString AppEntry::comment() const {
     return m_entry->property("comment").toString();
 }
 
@@ -47,7 +57,7 @@ QString AppEntry::execString() const {
     return m_entry->property("execString").toString();
 }
 
-QString AppEntry::wmClass() const {
+QString AppEntry::startupClass() const {
     return m_entry->property("startupClass").toString();
 }
 
@@ -65,7 +75,12 @@ QString AppEntry::keywords() const {
 
 AppDb::AppDb(QObject* parent)
     : QObject(parent)
+    , m_timer(new QTimer(this))
     , m_uuid(QUuid::createUuid().toString()) {
+    m_timer->setSingleShot(true);
+    m_timer->setInterval(300);
+    connect(m_timer, &QTimer::timeout, this, &AppDb::updateApps);
+
     auto db = QSqlDatabase::addDatabase("QSQLITE", m_uuid);
     db.setDatabaseName(":memory:");
     db.open();
@@ -83,16 +98,22 @@ QString AppDb::path() const {
 }
 
 void AppDb::setPath(const QString& path) {
-    if (m_path == path) {
+    auto newPath = path.isEmpty() ? ":memory:" : path;
+
+    if (m_path == newPath) {
         return;
     }
 
-    m_path = path;
+    m_path = newPath;
     emit pathChanged();
 
     auto db = QSqlDatabase::database(m_uuid, false);
     db.close();
-    db.setDatabaseName(path);
+    db.setDatabaseName(newPath);
+    db.open();
+
+    QSqlQuery query(db);
+    query.exec("CREATE TABLE IF NOT EXISTS frequencies (id TEXT PRIMARY KEY, frequency INTEGER)");
 
     updateAppFrequencies();
 }
@@ -109,7 +130,7 @@ void AppDb::setEntries(const QList<QObject*>& entries) {
     m_entries = entries;
     emit entriesChanged();
 
-    updateApps();
+    m_timer->start();
 }
 
 QList<AppEntry*> AppDb::apps() const {
@@ -133,7 +154,7 @@ void AppDb::incrementFrequency(const QString& id) {
     query.bindValue(":id", id);
     query.exec();
 
-    for (auto app : m_apps) {
+    for (auto* app : std::as_const(m_apps)) {
         if (app->id() == id) {
             const auto before = apps();
 
@@ -165,7 +186,7 @@ quint32 AppDb::getFrequency(const QString& id) const {
 }
 
 void AppDb::updateAppFrequencies() {
-    for (auto app : m_apps) {
+    for (auto* app : std::as_const(m_apps)) {
         app->setFrequency(getFrequency(app->id()));
     }
 }
@@ -173,7 +194,7 @@ void AppDb::updateAppFrequencies() {
 void AppDb::updateApps() {
     bool dirty = false;
 
-    for (auto entry : m_entries) {
+    for (const auto& entry : std::as_const(m_entries)) {
         const auto id = entry->property("id").toString();
         if (!m_apps.contains(id)) {
             dirty = true;
@@ -182,19 +203,22 @@ void AppDb::updateApps() {
     }
 
     QSet<QString> newIds;
-    for (auto entry : m_entries) {
+    for (const auto& entry : std::as_const(m_entries)) {
         newIds.insert(entry->property("id").toString());
     }
 
-    for (auto id : m_apps.keys()) {
+    QList<AppEntry*> toDelete;
+    for (auto it = m_apps.keyBegin(); it != m_apps.keyEnd(); ++it) {
+        const auto& id = *it;
         if (!newIds.contains(id)) {
             dirty = true;
-            delete m_apps.take(id);
+            toDelete << m_apps.take(id);
         }
     }
 
     if (dirty) {
         emit appsChanged();
+        qDeleteAll(toDelete);
     }
 }
 

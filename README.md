@@ -78,7 +78,7 @@ Dependencies:
 -   [`ddcutil`](https://github.com/rockowitz/ddcutil)
 -   [`brightnessctl`](https://github.com/Hummer12007/brightnessctl)
 -   [`app2unit`](https://github.com/Vladimir-csp/app2unit)
--   [`cava`](https://github.com/karlstav/cava)
+-   [`libcava`](https://github.com/LukashonakV/cava)
 -   [`networkmanager`](https://networkmanager.dev)
 -   [`lm-sensors`](https://github.com/lm-sensors/lm-sensors)
 -   [`fish`](https://github.com/fish-shell/fish-shell)
@@ -252,6 +252,48 @@ default, you must create it manually.
         "apps": {
             "terminal": ["foot"],
             "audio": ["pavucontrol"]
+        },
+        "battery": {
+            "warnLevels": [
+                {
+                    "level": 20,
+                    "title": "Low battery",
+                    "message": "You might want to plug in a charger",
+                    "icon": "battery_android_frame_2"
+                },
+                {
+                    "level": 10,
+                    "title": "Did you see the previous message?",
+                    "message": "You should probably plug in a charger <b>now</b>",
+                    "icon": "battery_android_frame_1"
+                },
+                {
+                    "level": 5,
+                    "title": "Critical battery level",
+                    "message": "PLUG THE CHARGER RIGHT NOW!!",
+                    "icon": "battery_android_alert",
+                    "critical": true
+                }
+            ],
+            "criticalLevel": 3
+        },
+        "idle": {
+            "inhibitWhenAudio": true,
+            "timeouts": [
+                {
+                    "timeout": 180,
+                    "idleAction": "lock"
+                },
+                {
+                    "timeout": 300,
+                    "idleAction": "dpms off",
+                    "returnAction": "dpms on"
+                },
+                {
+                    "timeout": 600,
+                    "idleAction": ["systemctl", "suspend-then-hibernate"]
+                }
+            ]
         }
     },
     "background": {
@@ -307,10 +349,6 @@ default, you must create it manually.
             {
                 "id": "power",
                 "enabled": true
-            },
-            {
-                "id": "idleInhibitor",
-                "enabled": false
             }
         ],
         "persistent": true,
@@ -467,7 +505,7 @@ default, you must create it manually.
         "dragThreshold": 50,
         "vimKeybinds": false,
         "enableDangerousActions": false,
-        "maxShown": 8,
+        "maxShown": 7,
         "maxWallpapers": 9,
         "specialPrefix": "@",
         "useFuzzy": {
@@ -514,12 +552,31 @@ default, you must create it manually.
     },
     "session": {
         "dragThreshold": 30,
+        "enabled": true,
         "vimKeybinds": false,
         "commands": {
             "logout": ["loginctl", "terminate-user", ""],
             "shutdown": ["systemctl", "poweroff"],
             "hibernate": ["systemctl", "hibernate"],
             "reboot": ["systemctl", "reboot"]
+        }
+    },
+    "sidebar": {
+        "dragThreshold": 80,
+        "enabled": true
+    },
+    "utilities": {
+        "enabled": true,
+        "maxToasts": 4,
+        "toasts": {
+            "audioInputChanged": true,
+            "audioOutputChanged": true,
+            "capsLockChanged": true,
+            "chargingChanged": true,
+            "configLoaded": true,
+            "dndChanged": true,
+            "gameModeChanged": true,
+            "numLockChanged": true
         }
     }
 }
